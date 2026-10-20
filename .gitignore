@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.env
+atomcode_state.json
+atomcode_state.json.tmp
+*.log
