@@ -115,6 +115,10 @@ Um plano válido, `success: true` ou `duplicate: true` confirmam sucesso nesta e
 - Não envie `atomcode_state.json`, `.env`, access tokens ou refresh tokens ao Git.
 - Guarde credenciais apenas em variáveis locais, GitHub Secrets ou variáveis do Qinglong.
 
+## Limites de uso e redistribuição
+
+O repositório oficial, os scripts, as instruções de implantação e os downloads das Releases são gratuitos. Não são permitidos empacotamento pago, implantação paga, exigência de assinatura, revenda, remoção de autoria, personificação do autor, uso da identidade ou dos QR codes do autor como endosso, nem repostagem em contas, grupos ou canais sem relação para desviar tráfego. O conteúdo irregular pode ser retirado; o autor pode pausar atualizações, arquivar ou excluir o repositório. Consulte [../NOTICE.md](../NOTICE.md) para as regras completas.
+
 ## 🔗 Links
 
 - [Releases](https://github.com/L0NE-6/AtomCode-Daily/releases)

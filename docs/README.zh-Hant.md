@@ -110,6 +110,10 @@ pip3 install requests
 - 不要把 `atomcode_state.json`、`.env`、access token 或 refresh token 提交到 Git。
 - 只使用本機環境變數、GitHub Secrets 或青龍環境變數保存憑證。
 
+## 使用邊界與轉載聲明
+
+官方版本免費。禁止付費包裝、付費部署、會員門檻、轉售、刪除署名、冒充作者、以作者身分或二維碼作背書，或搬運到無關帳號、群組與頻道引流。違規內容可能被要求下架；作者可暫停更新、封存或刪除倉庫。完整規則見 [../NOTICE.md](../NOTICE.md)。
+
 ## 🔗 專案連結
 
 - [Releases](https://github.com/L0NE-6/AtomCode-Daily/releases)
