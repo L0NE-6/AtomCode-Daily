@@ -5,6 +5,7 @@
 ## 功能
 
 - 查询 `status-v2`，有效套餐不会重复领取。
+- 可解析的到期时间会按当前时间校验，过期套餐重新进入领取流程。
 - 按 `Max → Pro → Lite` 级联领取，命中即停。
 - `duplicate: true` 按“已持有”处理，立即停止，避免降级。
 - access token 自动续期，并保存轮换后的 refresh token。

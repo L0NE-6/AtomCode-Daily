@@ -28,7 +28,7 @@ import os
 import re
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 import requests
 import urllib3
@@ -372,7 +372,20 @@ def active_plan(status):
         remaining = int(plan.get("remaining_days") or 0)
     except Exception:
         remaining = 0
-    if not expires_at and remaining <= 0:
+    expiry_ts = None
+    if expires_at:
+        try:
+            text = expires_at[:-1] + "+00:00" if expires_at.endswith("Z") else expires_at
+            expiry = datetime.fromisoformat(text)
+            if expiry.tzinfo is None:
+                expiry = expiry.replace(tzinfo=timezone(timedelta(hours=8)))
+            expiry_ts = expiry.timestamp()
+        except Exception:
+            expiry_ts = None
+    # 有可解析的到期时间时以它为准；缺失/不可解析时才用 remaining_days。
+    # 旧实现只看 expires_at 非空，过期套餐也会被当成有效，永远不会续领。
+    active = expiry_ts > time.time() if expiry_ts is not None else remaining > 0
+    if not active:
         return None
     return name, expires_at, remaining
 
