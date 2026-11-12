@@ -390,6 +390,50 @@ def active_plan(status):
     return name, expires_at, remaining
 
 
+def plan_tier(status):
+    """从 status-v2 的套餐名或 plan_type 中识别 Max / Pro / Lite。"""
+    plan = status.get("codingplan_free") if isinstance(status, dict) else None
+    name = ""
+    if isinstance(plan, dict):
+        name = str(plan.get("plan_name") or "").strip()
+    if not name and isinstance(status, dict):
+        name = str(status.get("plan_type") or status.get("planType") or "").strip()
+    lowered = name.lower()
+    for tier in TIERS:
+        if tier.lower() in lowered:
+            return tier
+    return ""
+
+
+def verified_plan(status):
+    """返回同时具备有效套餐和可识别档位的 status-v2 证据。"""
+    plan = active_plan(status)
+    tier = plan_tier(status)
+    if not plan or not tier:
+        return None
+    name, expires_at, remaining = plan
+    return tier, name, expires_at, remaining
+
+
+def describe_plan(status, prefix):
+    confirmed = verified_plan(status)
+    if not confirmed:
+        return ""
+    tier, name, expires_at, remaining = confirmed
+    text = "%s（%s 档" % (prefix, tier)
+    if name:
+        text += "：%s" % name
+    text += "）"
+    if remaining > 0:
+        text += "，剩余 %s 天" % remaining
+    elif expires_at:
+        text += "，到期 %s" % expires_at
+    quota = quota_summary(status)
+    if quota:
+        text += "；" + quota
+    return text
+
+
 def quota_summary(status):
     windows = status.get("rate_limit_windows") if isinstance(status, dict) else None
     if not isinstance(windows, list):
@@ -428,20 +472,8 @@ def classify_claim(payload):
 
 def run_account(client, query_only=False):
     status = client.status()
-    plan = active_plan(status)
-    quota = quota_summary(status)
-    if plan:
-        name, expires_at, remaining = plan
-        text = "套餐有效"
-        if name:
-            text += "（%s）" % name
-        if remaining > 0:
-            text += "，剩余 %s 天" % remaining
-        elif expires_at:
-            text += "，到期 %s" % expires_at
-        if quota:
-            text += "；" + quota
-        return True, text
+    if verified_plan(status):
+        return True, describe_plan(status, "套餐有效")
     if query_only:
         return True, "当前没有有效套餐，下次执行会尝试领取"
 
@@ -449,13 +481,26 @@ def run_account(client, query_only=False):
     for tier in TIERS:
         payload = client.claim(tier)
         verdict, message, plan_name = classify_claim(payload)
-        if verdict == "held":
-            return True, message or "已持有 %s 档套餐，无需重复领取" % tier
-        if verdict == "granted":
-            text = message or "已领取 %s 档免费套餐" % tier
+        if verdict in ("held", "granted"):
+            receipt = message or (
+                "已持有 %s 档套餐，无需重复领取" % tier
+                if verdict == "held"
+                else "已领取 %s 档免费套餐" % tier
+            )
             if plan_name:
-                text += "（%s）" % plan_name
-            return True, text
+                receipt += "（%s）" % plan_name
+            try:
+                readback = client.status()
+            except AtomCodeError as error:
+                return False, "领取回执：%s；但 status-v2 回读失败，结果待确认：%s" % (
+                    receipt, error)
+            if not verified_plan(readback):
+                return False, (
+                    "领取回执：%s；status-v2 已回读，但未确认 Max/Pro/Lite "
+                    "套餐生效或有效期可读" % receipt
+                )
+            prefix = "已持有，状态回读确认" if verdict == "held" else "领取成功，状态回读确认"
+            return True, describe_plan(readback, prefix)
         if message:
             refusals.append("%s: %s" % (tier, message))
     if refusals:

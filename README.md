@@ -47,14 +47,14 @@
 | **输出** | 套餐名称、到期时间、剩余天数、首个可见额度窗口，以及多账号汇总。 |
 | **部署** | 青龙面板、GitHub Actions、Windows / Linux 本地运行。 |
 | **依赖** | Python 3 + `requests`；仓库 Actions 使用 Python 3.11。 |
-| **成功判据** | 套餐仍在有效期，或领取接口明确返回成功 / `duplicate: true`；不以 HTTP 200 单独判定成功。 |
+| **成功判据** | 套餐仍在有效期；claim 返回 `success` / `duplicate` 后还必须通过 `status-v2` 回读确认 Max / Pro / Lite 档位与有效期，回读失败统一标记待确认。 |
 
 **核心能力**
 
 - 读取 `status-v2`，存在有效套餐时不重复领取。
 - 按 `Max → Pro → Lite` 级联尝试，命中即停。
 - 可解析的 `expires_at` 优先于 `remaining_days`，过期套餐会重新进入领取流程。
-- `duplicate: true` 按“已持有”处理，避免继续降级。
+- `success` / `duplicate: true` 后重新读取 `status-v2`，确认套餐档位和有效期后才报告成功。
 - access token 过期时自动续期，并保存轮换后的 refresh token。
 - 支持多账号、代理和 PushPlus / Bark / 企业微信 / 钉钉推送。
 
@@ -66,7 +66,9 @@
     └─ 无有效套餐
           ├─ --query ──> 只报告可领取，不提交请求
           └─ 正常执行 ──> Max → Pro → Lite
-                            ├─ success / duplicate ──> 停止
+                            ├─ success / duplicate ──> 重读 status-v2
+                            │                           ├─ 档位 + 有效期确认 ──> 成功
+                            │                           └─ 回读失败 / 无有效套餐 ──> 待确认 / 失败
                             └─ 三档均拒绝 ──> 返回失败
 ```
 
@@ -197,7 +199,7 @@ AtomCode 的免费权益是 CodingPlan 套餐授权，不是每日积分。脚�
 <details>
 <summary><b>已经持有 Pro，会不会继续尝试 Lite？</b></summary>
 
-不会。上游返回 `duplicate: true` 时会立即按“已持有”处理并停止级联。
+不会。上游返回 `duplicate: true` 后会停止级联，并重新读取 `status-v2` 确认当前档位和有效期。
 </details>
 
 <details>
@@ -209,7 +211,7 @@ AtomCode 的免费权益是 CodingPlan 套餐授权，不是每日积分。脚�
 <details>
 <summary><b>查询成功是否代表领取成功？</b></summary>
 
-不代表。`--query` 只读取状态；正常执行时仍以领取接口的 `success` / `duplicate` 和退出码为准。
+不代表。`--query` 只读取状态；正常执行时必须以领取接口的 `success` / `duplicate` 加上后续 `status-v2` 回读和退出码共同判断。
 </details>
 
 ## 🔒 隐私说明
@@ -222,7 +224,7 @@ AtomCode 的免费权益是 CodingPlan 套餐授权，不是每日积分。脚�
 
 ## 📦 版本与发布
 
-- 当前发布版：`v1.0.2`（2026-11-04，文档发行版；脚本逻辑仍为 `v1.0.1`）。
+- 当前发布版：`v1.0.3`（2026-11-12，CodingPlan 领取后状态回读）。
 
 ## ☕ 支持与反馈
 
