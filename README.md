@@ -6,7 +6,7 @@
 
 **探测 AtomCode 当前套餐，并在没有有效套餐时按 Max → Pro → Lite 自动领取免费 CodingPlan。**
 
-> 当前版本：**v1.0.3**（2026-11-12） · 最新更新：CodingPlan 领取后重读套餐档位与有效期，确认额度到账
+> 当前版本：**v1.0.3**（2026-11-13） · 最新更新：CodingPlan 领取后重读套餐档位与有效期，确认额度到账
 
 [简体中文](README.md) | [English](docs/README.en.md) | [繁體中文](docs/README.zh-Hant.md) | [日本語](docs/README.ja.md) | [한국어](docs/README.ko.md) | [Português (BR)](docs/README.pt-BR.md)
 
